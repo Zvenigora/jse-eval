@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/Zvenigora/jse-eval/compare/v1.10.0...v1.10.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **security:** case-insensitive bypass of constructor/prototype/__proto__ guard (CWE-693/CWE-94) ([03054c1](https://github.com/Zvenigora/jse-eval/commit/03054c1996632d8ad600ebc8539a40017559181b))
+
 # [1.10.0](https://github.com/Zvenigora/jse-eval/compare/v1.9.1...v1.10.0) (2023-12-31)
 
 
