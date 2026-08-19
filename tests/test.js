@@ -42,6 +42,7 @@ JseEval.addEvaluator('TestNodeType2', function(node, context) { return node.test
 export * from './sync.test.js';
 export * from './async.test.js';
 export * from './errors.test.js';
+export * from './security-bypass.test.js';
 export * from './case-insensitive.test.js';
 export * from './case-insensitive.test.copy.js';
 export * from './block-list.test.js';

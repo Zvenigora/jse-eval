@@ -238,7 +238,15 @@ export default class ExpressionEval {
   constructor(context?: Context, isAsync?: boolean, options?: Options) {
     this.context = context;
     this.isAsync = isAsync;
-    this.options = options || ExpressionEval.defaultOptions;
+    // Merge caller-supplied options over the library defaults instead of
+    // replacing them outright. Previously `options || defaultOptions` meant
+    // that passing ANY explicit options object (even `{}`, or one that
+    // simply didn't mention `caseSensitive`) silently discarded
+    // `defaultOptions.caseSensitive === true`, leaving `caseSensitive`
+    // `undefined` (falsy) and enabling case-insensitive property
+    // resolution the caller never asked for. See the SECURITY note on
+    // evaluateMember() below for why that mattered.
+    this.options = { ...ExpressionEval.defaultOptions, ...options };
   }
 
   public eval(node: AnyExpression, cb = v => v): unknown {
@@ -401,7 +409,21 @@ export default class ExpressionEval {
           ? this.eval(node.property)
           : (node.property as jsep.Identifier).name,
         (key: string) => {
-          if (/^__proto__|prototype|constructor$/.test(key)) {
+          // SECURITY: blocks the prototype-chain escape hatches
+          // ("__proto__", "prototype", "constructor") unconditionally,
+          // regardless of any blockList/allowList or caseSensitive option
+          // the host passes. Must be:
+          //  - case-insensitive (`i` flag): a bare-lowercase regex let
+          //    "CONSTRUCTOR" / "Constructor" / etc. sail through unblocked
+          //    and then resolve via getKeyValue()'s case-insensitive
+          //    prototype-chain lookup, reaching the real
+          //    Object.prototype.constructor and enabling RCE.
+          //  - fully grouped (`^(...)$`): without the outer group this
+          //    parsed as `(^__proto__)|(prototype)|(constructor$)`, which
+          //    over-blocked unrelated names merely containing "prototype"
+          //    (e.g. "prototypeName") and under-blocked names merely
+          //    starting with "constructor" (e.g. "constructorFoo").
+          if (/^(__proto__|prototype|constructor)$/i.test(String(key))) {
             throw Error(`Access to member "${key}" disallowed.`);
           }
           const obj = (node.optional ? (object || {}) : object);
